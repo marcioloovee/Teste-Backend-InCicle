@@ -1,0 +1,55 @@
+version: "3.7"
+services:
+  app:
+    build:
+      args:
+        user: user
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: net
+    container_name: app
+    restart: unless-stopped
+    working_dir: /var/www/
+    environment:
+      ENVIRONMENT: docker
+    volumes:
+      - ./app/:/var/www
+    networks:
+      - net
+    links:
+      - nginx
+    ports:
+      - 6001:6001
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./app/:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d/
+      - ./docker-compose/certs:/etc/nginx/certs
+    networks:
+      - net
+
+  psql:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=incicle
+      - POSTGRES_PASSWORD=incicle
+      - POSTGRES_DB=incicle
+    volumes:
+      - ./docker-compose/bd:/docker-entrypoint-initdb.d
+    networks:
+      - net
+
+networks:
+  net:
+    driver: bridge
+
